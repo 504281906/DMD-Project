@@ -48,44 +48,21 @@ type DeviceGroupRelation struct {
 	GroupID  uint64 `json:"group_id" gorm:"primaryKey"`
 }
 
-// Application 应用模型
-type Application struct {
+// SecurityPolicy 安全策略
+type SecurityPolicy struct {
 	ID          uint64    `json:"id" gorm:"primaryKey"`
 	Name        string    `json:"name" gorm:"not null"`
-	BundleID    string    `json:"bundle_id" gorm:"index"`
-	PackageName string    `json:"package_name" gorm:"index"`
-	Version     string    `json:"version"`
-	FilePath    string    `json:"file_path"`
-	FileSize    int64     `json:"file_size"`
+	Type        string    `json:"type"`                  // password/encryption/compliance/wipe
+	Description string    `json:"description"`
+	Rules       string    `json:"rules"`                // JSON格式的策略规则
+	Status      string    `json:"status"`               // active/inactive
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// DeviceApplication 设备应用安装记录
-type DeviceApplication struct {
-	ID            uint64    `json:"id" gorm:"primaryKey"`
-	DeviceID      uint64    `json:"device_id" gorm:"index"`
-	ApplicationID uint64    `json:"application_id" gorm:"index"`
-	InstalledAt   time.Time `json:"installed_at"`
-	Status        string    `json:"status"` // installed, failed, removed
-}
-
-// SecurityPolicy 安全策略
-type SecurityPolicy struct {
-	ID                uint64    `json:"id" gorm:"primaryKey"`
-	Name              string    `json:"name" gorm:"not null"`
-	Description       string    `json:"description"`
-	RequirePassword   bool      `json:"require_password"`
-	MinPasswordLength int       `json:"min_password_length"`
-	EncryptionEnabled bool      `json:"encryption_enabled"`
-	JailbreakDetected bool      `json:"jailbreak_detected"` // 是否检测越狱/root
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
-}
-
 // DevicePolicy 设备策略关联
 type DevicePolicy struct {
-	DeviceID  uint64 `json:"device_id" gorm:"primaryKey"`
-	PolicyID  uint64 `json:"policy_id" gorm:"primaryKey"`
-	AppliedAt time.Time `json:"applied_at"`
+	DeviceID    uint64    `json:"device_id" gorm:"primaryKey"`
+	PolicyID    uint64    `json:"policy_id" gorm:"primaryKey"`
+	AppliedAt   time.Time `json:"applied_at"`
 }

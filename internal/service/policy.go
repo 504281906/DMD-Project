@@ -32,7 +32,7 @@ func (s *PolicyService) CreatePolicy(policy *model.SecurityPolicy) error {
 }
 
 // GetPolicy 获取策略详情
-func (s *PolicyService) GetPolicy(id uint) (*model.SecurityPolicy, error) {
+func (s *PolicyService) GetPolicy(id uint64) (*model.SecurityPolicy, error) {
 	return s.policyRepo.GetByID(id)
 }
 
@@ -42,7 +42,7 @@ func (s *PolicyService) ListPolicies(offset, limit int, status string) ([]model.
 }
 
 // UpdatePolicy 更新策略
-func (s *PolicyService) UpdatePolicy(id uint, updates map[string]interface{}) error {
+func (s *PolicyService) UpdatePolicy(id uint64, updates map[string]interface{}) error {
 	// 验证策略存在
 	_, err := s.policyRepo.GetByID(id)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s *PolicyService) UpdatePolicy(id uint, updates map[string]interface{}) er
 }
 
 // DeletePolicy 删除策略
-func (s *PolicyService) DeletePolicy(id uint) error {
+func (s *PolicyService) DeletePolicy(id uint64) error {
 	_, err := s.policyRepo.GetByID(id)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (s *PolicyService) DeletePolicy(id uint) error {
 }
 
 // AssignPolicy 分配策略到设备
-func (s *PolicyService) AssignPolicy(deviceID, policyID uint) error {
+func (s *PolicyService) AssignPolicy(deviceID, policyID uint64) error {
 	// 验证设备存在
 	_, err := s.deviceRepo.GetByID(deviceID)
 	if err != nil {
@@ -76,12 +76,12 @@ func (s *PolicyService) AssignPolicy(deviceID, policyID uint) error {
 }
 
 // RemovePolicy 从设备移除策略
-func (s *PolicyService) RemovePolicy(deviceID, policyID uint) error {
+func (s *PolicyService) RemovePolicy(deviceID, policyID uint64) error {
 	return s.policyRepo.RemoveFromDevice(deviceID, policyID)
 }
 
 // ListDevicePolicies 获取设备关联的策略
-func (s *PolicyService) ListDevicePolicies(deviceID uint) ([]model.DevicePolicy, error) {
+func (s *PolicyService) ListDevicePolicies(deviceID uint64) ([]model.DevicePolicy, error) {
 	return s.policyRepo.ListByDevice(deviceID)
 }
 
@@ -91,7 +91,7 @@ func (s *PolicyService) GetPolicyStats() (*model.PolicyStats, error) {
 }
 
 // ApplyPolicy 应用策略到设备（模拟）
-func (s *PolicyService) ApplyPolicy(deviceID, policyID uint) error {
+func (s *PolicyService) ApplyPolicy(deviceID, policyID uint64) error {
 	// 验证设备存在
 	device, err := s.deviceRepo.GetByID(deviceID)
 	if err != nil {

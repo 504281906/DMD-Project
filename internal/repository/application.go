@@ -59,14 +59,14 @@ func (r *ApplicationRepository) CountByPlatform(platform model.AppPlatform) (int
 }
 
 // ListByDevice 获取设备已安装的应用列表
-func (r *ApplicationRepository) ListByDevice(deviceID uint) ([]model.DeviceApplication, error) {
+func (r *ApplicationRepository) ListByDevice(deviceID uint64) ([]model.DeviceApplication, error) {
 	var deviceApps []model.DeviceApplication
 	err := r.db.Where("device_id = ?", deviceID).Order("created_at desc").Find(&deviceApps).Error
 	return deviceApps, err
 }
 
 // GetDeviceApp 获取设备应用安装记录
-func (r *ApplicationRepository) GetDeviceApp(deviceID, appID uint) (*model.DeviceApplication, error) {
+func (r *ApplicationRepository) GetDeviceApp(deviceID uint64, appID uint) (*model.DeviceApplication, error) {
 	var deviceApp model.DeviceApplication
 	err := r.db.Where("device_id = ? AND application_id = ?", deviceID, appID).First(&deviceApp).Error
 	if err != nil {

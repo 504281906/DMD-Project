@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Table, Pie, Tag, Typography } from 'antd';
+import { Row, Col, Card, Statistic, Table, Tag, Typography } from 'antd';
 import {
   TabletOutlined,
   AppstoreOutlined,
@@ -7,6 +7,7 @@ import {
   AlertOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { Pie } from '@ant-design/plots';
 import {
   getDashboardStats,
   getPlatformDistribution,
@@ -102,6 +103,15 @@ const Dashboard: React.FC = () => {
     value: item.count,
   }));
 
+  const pieConfig = {
+    data: pieData,
+    angleField: 'value',
+    colorField: 'name',
+    radius: 0.8,
+    label: { text: 'value', position: 'outside' },
+    legend: { position: 'bottom' as const },
+  };
+
   return (
     <div>
       <Title level={4}>仪表盘</Title>
@@ -150,13 +160,7 @@ const Dashboard: React.FC = () => {
       <Row gutter={16}>
         <Col span={12}>
           <Card title="设备平台分布" loading={loading}>
-            <Pie
-              data={pieData}
-              height={250}
-              radius={['40%', '70%']}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              legend={{ position: 'bottom' }}
-            />
+            {pieData.length > 0 && <Pie {...pieConfig} height={250} />}
           </Card>
         </Col>
         <Col span={12}>

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"openmdm/internal/model"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -20,7 +21,7 @@ func (r *PolicyRepository) Create(policy *model.SecurityPolicy) error {
 }
 
 // GetByID 根据ID获取策略
-func (r *PolicyRepository) GetByID(id uint) (*model.SecurityPolicy, error) {
+func (r *PolicyRepository) GetByID(id uint64) (*model.SecurityPolicy, error) {
 	var policy model.SecurityPolicy
 	if err := r.db.First(&policy, id).Error; err != nil {
 		return nil, err
@@ -50,12 +51,12 @@ func (r *PolicyRepository) List(offset, limit int, status string) ([]model.Secur
 }
 
 // Update 更新策略
-func (r *PolicyRepository) Update(id uint, updates map[string]interface{}) error {
+func (r *PolicyRepository) Update(id uint64, updates map[string]interface{}) error {
 	return r.db.Model(&model.SecurityPolicy{}).Where("id = ?", id).Updates(updates).Error
 }
 
 // Delete 删除策略
-func (r *PolicyRepository) Delete(id uint) error {
+func (r *PolicyRepository) Delete(id uint64) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// 先删除关联的设备策略
 		if err := tx.Where("policy_id = ?", id).Delete(&model.DevicePolicy{}).Error; err != nil {
@@ -67,22 +68,22 @@ func (r *PolicyRepository) Delete(id uint) error {
 }
 
 // AssignToDevice 分配策略到设备
-func (r *PolicyRepository) AssignToDevice(deviceID, policyID uint) error {
+func (r *PolicyRepository) AssignToDevice(deviceID, policyID uint64) error {
 	dp := model.DevicePolicy{
-		DeviceID:     deviceID,
-		PolicyID:     policyID,
-		AssignStatus: "pending",
+		DeviceID:  deviceID,
+		PolicyID:  policyID,
+		AppliedAt: time.Now(),
 	}
 	return r.db.Create(&dp).Error
 }
 
 // RemoveFromDevice 从设备移除策略
-func (r *PolicyRepository) RemoveFromDevice(deviceID, policyID uint) error {
+func (r *PolicyRepository) RemoveFromDevice(deviceID, policyID uint64) error {
 	return r.db.Where("device_id = ? AND policy_id = ?", deviceID, policyID).Delete(&model.DevicePolicy{}).Error
 }
 
 // ListByDevice 获取设备关联的策略
-func (r *PolicyRepository) ListByDevice(deviceID uint) ([]model.DevicePolicy, error) {
+func (r *PolicyRepository) ListByDevice(deviceID uint64) ([]model.DevicePolicy, error) {
 	var dps []model.DevicePolicy
 	if err := r.db.Where("device_id = ?", deviceID).Find(&dps).Error; err != nil {
 		return nil, err
@@ -97,7 +98,7 @@ func (r *PolicyRepository) GetStats() (*model.PolicyStats, error) {
 	r.db.Model(&model.SecurityPolicy{}).Count(&stats.TotalPolicies)
 	r.db.Model(&model.SecurityPolicy{}).Where("status = ?", "active").Count(&stats.ActivePolicies)
 	r.db.Model(&model.Device{}).Count(&stats.TotalDevices)
-	r.db.Model(&model.DevicePolicy{}).Where("assign_status = ?", "applied").Count(&stats.AppliedPolicies)
+	r.db.Model(&model.DevicePolicy{}).Count(&stats.AppliedPolicies)
 
 	return &stats, nil
 }

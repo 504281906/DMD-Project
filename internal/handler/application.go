@@ -141,7 +141,7 @@ func (h *ApplicationHandler) Install(c *gin.Context) {
 
 	deviceApp, err := h.svc.InstallApp(uint(deviceID), req.ApplicationID)
 	if err != nil {
-		if err == service.ErrDeviceNotFound {
+		if err == service.ErrAppDeviceNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "device not found"})
 			return
 		}

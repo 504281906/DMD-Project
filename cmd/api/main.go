@@ -11,24 +11,24 @@ import (
 	"openmdm/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func main() {
-	// 加载配置
+	// Load config
 	cfg, err := config.Load("config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 连接数据库
-	db, err := gorm.Open(postgres.Open(cfg.Database.DSN()), &gorm.Config{})
+	// Connect to SQLite database
+	db, err := gorm.Open(sqlite.Open("openmdm.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect database: %v", err)
 	}
 
-	// 自动迁移表
+	// Auto migrate tables
 	if err := db.AutoMigrate(
 		&model.Device{},
 		&model.DeviceGroup{},
@@ -41,17 +41,20 @@ func main() {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	// 初始化依赖
+	// Initialize dependencies
 	deviceRepo := repository.NewDeviceRepository(db)
 	deviceSvc := service.NewDeviceService(deviceRepo)
 	deviceHandler := handler.NewDeviceHandler(deviceSvc)
 
-	// 应用分发模块
 	appRepo := repository.NewApplicationRepository(db)
 	appSvc := service.NewApplicationService(appRepo, deviceRepo)
 	appHandler := handler.NewApplicationHandler(appSvc)
 
-	// 初始化 Gin
+	policyRepo := repository.NewPolicyRepository(db)
+	policySvc := service.NewPolicyService(policyRepo, deviceRepo)
+	policyHandler := handler.NewPolicyHandler(policySvc)
+
+	// Initialize Gin
 	if cfg.App.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
@@ -63,7 +66,7 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS())
 
-	// 健康检查
+	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
@@ -71,7 +74,7 @@ func main() {
 		})
 	})
 
-	// API 路由
+	// API routes
 	v1 := r.Group("/api/v1")
 	{
 		devices := v1.Group("/devices")
@@ -83,9 +86,12 @@ func main() {
 			devices.DELETE("/:id", deviceHandler.Delete)
 			devices.POST("/:id/lock", deviceHandler.Lock)
 			devices.POST("/:id/wipe", deviceHandler.Wipe)
+			devices.POST("/:id/policies", policyHandler.Assign)
+			devices.DELETE("/:id/policies/:policyId", policyHandler.Remove)
+			devices.GET("/:id/policies", policyHandler.ListByDevice)
+			devices.POST("/:id/policies/:policyId/apply", policyHandler.Apply)
 		}
 
-		// 应用管理
 		apps := v1.Group("/apps")
 		{
 			apps.POST("", appHandler.Create)
@@ -95,15 +101,24 @@ func main() {
 			apps.DELETE("/:id", appHandler.Delete)
 		}
 
-		// 设备应用安装
 		deviceApps := v1.Group("/devices/:id/apps")
 		{
 			deviceApps.POST("", appHandler.Install)
 			deviceApps.GET("", appHandler.ListByDevice)
 		}
+
+		policies := v1.Group("/policies")
+		{
+			policies.POST("", policyHandler.Create)
+			policies.GET("", policyHandler.List)
+			policies.GET("/stats", policyHandler.Stats)
+			policies.GET("/:id", policyHandler.Get)
+			policies.PUT("/:id", policyHandler.Update)
+			policies.DELETE("/:id", policyHandler.Delete)
+		}
 	}
 
-	// 启动服务器
+	// Start server
 	addr := cfg.Server.Address()
 	log.Printf("Starting server on %s", addr)
 	if err := r.Run(addr); err != nil {

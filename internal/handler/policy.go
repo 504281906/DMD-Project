@@ -76,13 +76,13 @@ func (h *PolicyHandler) List(c *gin.Context) {
 
 // Get 获取策略详情
 func (h *PolicyHandler) Get(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy id"})
 		return
 	}
 
-	policy, err := h.policySvc.GetPolicy(uint(id))
+	policy, err := h.policySvc.GetPolicy(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "policy not found"})
 		return
@@ -93,7 +93,7 @@ func (h *PolicyHandler) Get(c *gin.Context) {
 
 // Update 更新策略
 func (h *PolicyHandler) Update(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy id"})
 		return
@@ -107,7 +107,7 @@ func (h *PolicyHandler) Update(c *gin.Context) {
 
 	// 验证规则格式（如果更新了rules）
 	if rules, ok := input["rules"].(string); ok {
-		policy, _ := h.policySvc.GetPolicy(uint(id))
+		policy, _ := h.policySvc.GetPolicy(id)
 		if policy != nil {
 			policyType := input["type"]
 			if policyType == "" {
@@ -120,7 +120,7 @@ func (h *PolicyHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if err := h.policySvc.UpdatePolicy(uint(id), input); err != nil {
+	if err := h.policySvc.UpdatePolicy(id, input); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -130,13 +130,13 @@ func (h *PolicyHandler) Update(c *gin.Context) {
 
 // Delete 删除策略
 func (h *PolicyHandler) Delete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy id"})
 		return
 	}
 
-	if err := h.policySvc.DeletePolicy(uint(id)); err != nil {
+	if err := h.policySvc.DeletePolicy(id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -146,14 +146,14 @@ func (h *PolicyHandler) Delete(c *gin.Context) {
 
 // Assign 分配策略到设备
 func (h *PolicyHandler) Assign(c *gin.Context) {
-	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid device id"})
 		return
 	}
 
 	var input struct {
-		PolicyID uint `json:"policy_id" binding:"required"`
+		PolicyID uint64 `json:"policy_id" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -161,7 +161,7 @@ func (h *PolicyHandler) Assign(c *gin.Context) {
 		return
 	}
 
-	if err := h.policySvc.AssignPolicy(uint(deviceID), input.PolicyID); err != nil {
+	if err := h.policySvc.AssignPolicy(deviceID, input.PolicyID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -171,19 +171,19 @@ func (h *PolicyHandler) Assign(c *gin.Context) {
 
 // Remove 从设备移除策略
 func (h *PolicyHandler) Remove(c *gin.Context) {
-	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid device id"})
 		return
 	}
 
-	policyID, err := strconv.ParseUint(c.Query("policy_id"), 10, 32)
+	policyID, err := strconv.ParseUint(c.Query("policy_id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy id"})
 		return
 	}
 
-	if err := h.policySvc.RemovePolicy(uint(deviceID), uint(policyID)); err != nil {
+	if err := h.policySvc.RemovePolicy(deviceID, policyID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -193,13 +193,13 @@ func (h *PolicyHandler) Remove(c *gin.Context) {
 
 // ListByDevice 获取设备关联的策略
 func (h *PolicyHandler) ListByDevice(c *gin.Context) {
-	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid device id"})
 		return
 	}
 
-	policies, err := h.policySvc.ListDevicePolicies(uint(deviceID))
+	policies, err := h.policySvc.ListDevicePolicies(deviceID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -210,19 +210,19 @@ func (h *PolicyHandler) ListByDevice(c *gin.Context) {
 
 // Apply 应用策略到设备
 func (h *PolicyHandler) Apply(c *gin.Context) {
-	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	deviceID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid device id"})
 		return
 	}
 
-	policyID, err := strconv.ParseUint(c.Param("policyId"), 10, 32)
+	policyID, err := strconv.ParseUint(c.Param("policyId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid policy id"})
 		return
 	}
 
-	if err := h.policySvc.ApplyPolicy(uint(deviceID), uint(policyID)); err != nil {
+	if err := h.policySvc.ApplyPolicy(deviceID, policyID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
